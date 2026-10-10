@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "foamtriage"
+version = "0.1.0"
+description = "Turn an OpenFOAM log into a verdict that fits in a few hundred tokens"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Ivan Grigin" }]
+keywords = ["openfoam", "cfd", "logs", "diagnostics", "simulation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+# No runtime dependencies on purpose: this has to install on a cluster login
+# node with nothing but a stdlib Python.
+dependencies = []
+
+[project.optional-dependencies]
+parquet = ["pyarrow>=14"]
+
+[project.scripts]
+foamtriage = "foamtriage._cli:main"
+
+[project.urls]
+Homepage = "https://github.com/IvanGrigin/foamtriage"
+Issues = "https://github.com/IvanGrigin/foamtriage/issues"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/foamtriage"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
