@@ -84,11 +84,11 @@ foamtriage residuals log.X --field p --last 50     # ~4 KB, 50 rows
 from foamtriage import FoamLog, Status
 
 log = FoamLog.load("log.simpleFoam")
-log.status is Status.FAILED      # the verdict as an enum
-log.healthy                      # False when it failed, diverged or finished dirty
-log.summary()                    # the capped payload, <= 2 kB
+log.status is Status.FAILED  # the verdict as an enum
+log.healthy  # False when it failed, diverged or finished dirty
+log.summary()  # the capped payload, <= 2 kB
 log.residual_history("p", last=50)
-log.steps                        # per-step rows, never in the summary
+log.steps  # per-step rows, never in the summary
 ```
 
 `foamtriage.DIAGNOSTICS` is the failure table, `foamtriage.SOLVED_TOL` the

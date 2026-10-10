@@ -50,6 +50,9 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 88
+# No `select`: CI runs ruff's own defaults over the whole tree, so pinning a
+# different set here would only make local and CI disagree. Lint everything,
+# not just src/ — that mistake turned the repo red minutes after publishing.
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"

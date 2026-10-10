@@ -1,100 +1,108 @@
 #!/usr/bin/env python3
-"""Run foamlog over a directory of real logs and flag anything suspicious.
+"""Run foamtriage over a directory of real logs and flag anything suspicious.
 
-    python3 validate_reallogs.py reallogs/
+    python3 tools/validate_corpus.py /path/to/logs
 
-This is the harness that actually earns trust: synthetic fixtures prove the
-structure, real logs prove the wording. It asserts nothing about values it
-cannot know — it looks for the shapes that mean "the parser missed something".
+Synthetic fixtures prove the structure; only real logs prove the wording. This
+asserts nothing about values it cannot know — it looks for the shapes that mean
+the parser missed something.
 """
-import os
+
+from __future__ import annotations
+
 import sys
+from pathlib import Path
 
-from foamtriage import SOLVED_TOL, FoamLog
-
-BIG = 20000  # bytes: above this a log should have a time loop
-
-#: the run died before OpenFOAM printed anything, so a missing header is the
-#: truth about the log rather than a parser miss
+from foamtriage import SOLVED_TOL, FoamLog, Status, Trend
 from foamtriage._diagnostics import PRE_EXEC_REASONS
 
-PRE_EXEC_FAILURES = PRE_EXEC_REASONS
+#: Above this, a solver log should have a time loop.
+BIG = 20_000
+
+SKIP_SUFFIXES = (".md", ".json", ".py", ".csv", ".parquet")
 
 
-def check(path):
-    size = os.path.getsize(path)
+def check(path: Path) -> tuple[FoamLog | None, list[str]]:
+    """Return the parsed log and the reasons to doubt it."""
     try:
         log = FoamLog.load(path)
-        r = log.summary()
-    except Exception as e:
-        return None, ["PARSER CRASHED: %s: %s" % (type(e).__name__, e)]
-    why = []
-    started = r["reason"] not in PRE_EXEC_FAILURES
-    if not r["solver"] and started:
+    except Exception as exc:  # noqa: BLE001 - a crash IS the finding here
+        return None, [f"PARSER CRASHED: {type(exc).__name__}: {exc}"]
+
+    why: list[str] = []
+    # A run that died before OpenFOAM printed anything has no header to parse,
+    # which is the truth about the log rather than a parser miss.
+    started = log.reason not in PRE_EXEC_REASONS
+
+    if not log.solver and started:
         why.append("no solver name")
-    if r["solver_source"] == "filename":
-        pass  # header was stripped; inferring from the filename is expected
-    if not r["version"] and started and r["solver_source"] == "exec":
+    if not log.version and started and log.solver_source.value == "exec":
         why.append("no version")
-    if r["fork"] == "unknown" and r["version"]:
-        # a log with no banner at all is honestly unknown; only doubt the fork
-        # when the header was there and still unidentifiable
+    if log.fork == "unknown" and log.version:
         why.append("fork unknown despite a parsed banner")
-    if size > BIG and started:
-        if r["n_steps"] == 0:
-            why.append("big log but no time steps")
-        if not r["fields"] and r["n_steps"] == 0:
+
+    if path.stat().st_size > BIG and started:
+        if log.n_steps == 0:
+            why.append("big log with no time steps")
+        if not log.fields and log.n_steps == 0:
             why.append("big log with neither steps nor residual fields")
-        if r["status"] == "incomplete" and r["n_steps"] == 0:
-            # a killed or still-running solver legitimately reports incomplete;
-            # only a big log with no time loop at all means a parser miss
+        if log.status is Status.INCOMPLETE and log.n_steps == 0:
             why.append("big log with no time loop reported incomplete")
-    if r["status"] == "failed" and r["reason"] in ("fatal_error", "fatal_io_error"):
-        why.append("failed but the table could not name the error (reason=%s)" % r["reason"])
-    for name, v in r["residuals"].items():
-        if v["trend"] == "diverging" and (v["last_final"] or 0) <= SOLVED_TOL:
-            why.append("%s called diverging at a converged residual" % name)
-    return r, why
+
+    if log.status is Status.FAILED and log.reason in {"fatal_error", "fatal_io_error"}:
+        why.append(f"failed but the table could not name it (reason={log.reason})")
+
+    for name, hist in log.residuals.items():
+        if hist.trend is Trend.DIVERGING and (hist.last_final or 0.0) <= SOLVED_TOL:
+            why.append(f"{name} called diverging at a converged residual")
+
+    return log, why
 
 
-def main(argv):
-    root = argv[0] if argv else "reallogs"
-    if not os.path.isdir(root):
-        print("no such directory: %s" % root)
+def main(argv: list[str]) -> int:
+    root = Path(argv[0]) if argv else Path("reallogs")
+    if not root.is_dir():
+        print(f"no such directory: {root}")
         return 2
-    skip = (".md", ".json", ".py", ".csv", ".parquet")
-    files = sorted(f for f in os.listdir(root)
-                   if not f.startswith(".") and not f.endswith(skip))
+
+    files = sorted(
+        p
+        for p in root.iterdir()
+        if p.is_file() and not p.name.startswith(".") and p.suffix not in SKIP_SUFFIXES
+    )
     if not files:
-        print("no logs in %s" % root)
+        print(f"no logs in {root}")
         return 2
 
-    print("%-42s %-20s %-5s %-7s %6s %-28s" %
-          ("file", "solver", "fork", "ver", "steps", "status/reason"))
-    print("-" * 114)
-    flagged = []
-    for f in files:
-        path = os.path.join(root, f)
-        r, why = check(path)
-        if r is None:
-            print("%-42s %s" % (f[:42], why[0]))
-            flagged.append((f, why))
+    header = (
+        f"{'file':42} {'solver':20} {'fork':5} {'ver':7} {'steps':>6} status/reason"
+    )
+    print(header)
+    print("-" * len(header))
+
+    flagged: list[tuple[str, list[str]]] = []
+    for path in files:
+        log, why = check(path)
+        if log is None:
+            print(f"{path.name[:42]:42} {why[0]}")
+            flagged.append((path.name, why))
             continue
-        print("%-42s %-20s %-5s %-7s %6d %-28s" %
-              (f[:42], (r["solver"] or "''")[:20], r["fork"],
-               (r["version"] or "''")[:7], r["n_steps"],
-               (r["status"] + "/" + r["reason"])[:28]))
+        print(
+            f"{path.name[:42]:42} {log.solver[:20]:20} {log.fork:5} "
+            f"{log.version[:7]:7} {log.n_steps:6d} "
+            f"{log.status.value}/{log.reason}"
+        )
         if why:
-            flagged.append((f, why))
+            flagged.append((path.name, why))
 
     print()
     if flagged:
-        print("SUSPECT (%d/%d):" % (len(flagged), len(files)))
-        for f, why in flagged:
-            for w in why:
-                print("  %-44s %s" % (f[:44], w))
+        print(f"SUSPECT ({len(flagged)}/{len(files)}):")
+        for name, reasons in flagged:
+            for reason in reasons:
+                print(f"  {name[:44]:44} {reason}")
         return 1
-    print("clean: %d real logs, nothing suspicious" % len(files))
+    print(f"clean: {len(files)} real logs, nothing suspicious")
     return 0
 
 
