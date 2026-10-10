@@ -1,5 +1,9 @@
 # foamtriage
 
+[![CI](https://github.com/IvanGrigin/foamtriage/actions/workflows/ci.yml/badge.svg)](https://github.com/IvanGrigin/foamtriage/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)](https://github.com/IvanGrigin/foamtriage)
+[![Licence](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
+
 Turn an OpenFOAM log into a verdict that fits in a few hundred tokens.
 
 ```
