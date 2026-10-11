@@ -11,7 +11,7 @@ import os
 import re
 from typing import TYPE_CHECKING, Any, Final
 
-from ._diagnostics import FALLTHROUGH, DiagnosticSpec
+from ._diagnostics import BENIGN_WARNINGS, FALLTHROUGH, DiagnosticSpec
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -394,8 +394,14 @@ def scan(lines: Iterator[str]) -> dict[str, Any]:
             st["fatal"] = True
 
         for spec in FALLTHROUGH:
-            if spec.pattern.search(line):
-                _record(st["diagnostics"], spec, line, lineno)
+            if not spec.pattern.search(line):
+                continue
+            if spec.id == "foam_warning" and any(
+                b.search(line) for b in BENIGN_WARNINGS
+            ):
+                # routine chatter, not a finding
+                continue
+            _record(st["diagnostics"], spec, line, lineno)
 
     close_step()
 
@@ -423,7 +429,9 @@ def resolve_solver(st: dict[str, Any]) -> str:
     """
     exec_line: str = st["exec"] or ""
     parts = exec_line.split()
-    first = parts[0] if parts else ""
+    # clusters and containers put the full path in Exec:
+    #   Exec : /home1/apps/.../platforms/linux64.../bin/snappyHexMesh
+    first = os.path.basename(parts[0]) if parts else ""
 
     if first == "foamMultiRun":
         return first

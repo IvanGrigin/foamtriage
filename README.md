@@ -64,8 +64,13 @@ a human to graph. Its per-step output overlaps with what `foamtriage` exposes as
 `residuals` and `steps`, and if plotting is what you want, use it.
 
 What `foamLog` does not do is **name a failure**. `foamtriage` carries a table
-of 37 recognised failure modes, each with the specifics pulled out of the
+of 56 recognised failure modes, each with the specifics pulled out of the
 message and one action to take.
+
+Each entry records where it came from. 43 of the 56 have been seen firing on
+real logs (`source=corpus`); the other 13 are plausible but unobserved
+(`source=inferred`), and a hit on one of those is a hint rather than a verdict.
+If you get one, the log is worth an issue.
 
 ## Careful about one thing
 
@@ -81,8 +86,9 @@ The names in `diverging` survive the summary's caps for exactly this reason.
 
 ## Validated against real logs
 
-Developed against a corpus of **364 real logs (23.9 MB) from 104 public
-repositories**, which found seven bugs no synthetic fixture would have:
+Developed against a corpus of **884 real logs** from public repositories — 364
+solver logs and 520 from the meshing and decomposition utilities — which found
+bugs no synthetic fixture would have:
 
 - `Time = 1s` — openfoam.org v11+ appends a unit, so a regex anchored on the
   number reports one step for an entire run.
@@ -107,11 +113,15 @@ is pinned as a minimal log in the tests instead.
   real logs, not derived from solver tolerances.
 - The table names 37 failure modes. Anything else reports `fatal_error` and
   leaves the log untouched — then read its tail, not the whole file.
-- Utility logs (`blockMesh`, `checkMesh`, `snappyHexMesh`) are recognised by
-  their `Exec` name, but their contents are not parsed.
-- `snappyHexMesh` failure strings are a **deliberate gap**, not an oversight. A
-  regex that silently never matches looks like coverage and is not. Open an
-  issue with a real log and it gets added.
+- Utility logs (`blockMesh`, `checkMesh`, `snappyHexMesh`, `decomposePar`) have
+  their failures named, but their per-run numbers — cell counts, mesh quality
+  tables — are not parsed yet.
+- 13 of the 56 failure modes are `source=inferred`: never observed in the
+  corpus. They may still be real — a regex that silently never matches looks
+  like coverage and is not, so they are labelled rather than hidden.
+- Benign chatter is filtered out of the catch-all warning counter.
+  `Smoothing displacement` alone appeared 628 times across 520 utility logs;
+  counting it would make every meshing run look alarming.
 
 ## What else is in this repository
 

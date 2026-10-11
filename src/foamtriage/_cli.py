@@ -90,7 +90,11 @@ CAPABILITIES: dict[str, Any] = {
             "utility logs (blockMesh, checkMesh, snappyHexMesh) are recognised "
             "by Exec name but their contents are not parsed"
         ),
-        "snappyHexMesh failure strings are a deliberate gap, not an oversight",
+        (
+            "benign warnings are filtered from the catch-all counter: "
+            "'Smoothing displacement' alone appeared 628 times across 520 "
+            "real utility logs"
+        ),
     ],
 }
 

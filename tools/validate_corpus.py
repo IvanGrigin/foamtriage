@@ -13,7 +13,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from foamtriage import SOLVED_TOL, FoamLog, Status, Trend
+from foamtriage import SOLVED_TOL, FoamLog, Kind, Status, Trend
 from foamtriage._diagnostics import PRE_EXEC_REASONS
 
 #: Above this, a solver log should have a time loop.
@@ -41,7 +41,8 @@ def check(path: Path) -> tuple[FoamLog | None, list[str]]:
     if log.fork == "unknown" and log.version:
         why.append("fork unknown despite a parsed banner")
 
-    if path.stat().st_size > BIG and started:
+    # blockMesh, checkMesh and friends never have a time loop
+    if path.stat().st_size > BIG and started and log.kind is not Kind.UTILITY:
         if log.n_steps == 0:
             why.append("big log with no time steps")
         if not log.fields and log.n_steps == 0:

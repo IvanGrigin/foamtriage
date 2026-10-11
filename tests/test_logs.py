@@ -175,9 +175,15 @@ def test_an_empty_log_still_answers() -> None:
 def test_diagnostics_table_is_well_formed() -> None:
     ids = [d.id for d in DIAGNOSTICS]
     assert len(ids) == len(set(ids))
+    # most of the table is confirmed against real logs; the rest is flagged so
+    # a caller can weigh a hit accordingly
+    from foamtriage._diagnostics import Source
+
+    confirmed = [d for d in DIAGNOSTICS if d.source is Source.CORPUS]
+    assert len(confirmed) >= 40, len(confirmed)
     # DiagnosticSpec.__post_init__ enforces group counts; assert the table size
     # so an accidental deletion is noticed
-    assert len(DIAGNOSTICS) == 37
+    assert len(DIAGNOSTICS) == 56
 
 
 @pytest.mark.parametrize("name", [p.name for p in sorted(LOGS.iterdir())])
