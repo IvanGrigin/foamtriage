@@ -35,7 +35,7 @@ foamtriage steps log.X --out steps.parquet
 ```python
 from foamtriage import FoamLog, Status
 
-log = FoamLog.load("log.simpleFoam")
+log = FoamLog.read("log.simpleFoam")
 if not log.healthy:
     print(log.reason, log.fix["note"])
 ```

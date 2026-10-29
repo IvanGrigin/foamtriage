@@ -173,11 +173,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         if args.cmd == "parse":
-            log = FoamLog.load(args.log)
+            log = FoamLog.read(args.log)
             print(json.dumps(log.summary()))
             return exit_code(log)
         if args.cmd == "diagnose":
-            log = FoamLog.load(args.log)
+            log = FoamLog.read(args.log)
             print(
                 json.dumps(
                     {
@@ -202,7 +202,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return exit_code(log)
         if args.cmd == "residuals":
-            rows = FoamLog.load(args.log).residual_history(args.field, last=args.last)
+            rows = FoamLog.read(args.log).residual_history(args.field, last=args.last)
             print(
                 json.dumps(
                     [
@@ -218,7 +218,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return EXIT_OK
         if args.cmd == "steps":
-            log = FoamLog.load(args.log)
+            log = FoamLog.read(args.log)
             print(json.dumps(write_steps(log, args.out, args.format)))
             return EXIT_OK
     except OSError as e:

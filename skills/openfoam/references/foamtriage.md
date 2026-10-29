@@ -54,7 +54,8 @@ Branch on these instead of reading the JSON when all you need is whether to go o
 | `solver`, `exec`, `solver_modules` | run name, command line, modules a `foamRun` loaded |
 | `solver_source` | `exec`, `module`, `filename` or empty — provenance of the name. `filename` means the header was stripped and the name was inferred |
 | `fork`, `version`, `build` | `org`, `com`, `extend`, `rapidcfd` or `unknown`, and whatever the log said |
-| `steady`, `n_steps`, `last_time`, `wallclock_s` | time loop |
+| `steady` | `true`/`false` only when the log shows it (SIMPLE/steady-state-mode lines vs Courant, `deltaT`, PISO); `null` otherwise — then check `ddtSchemes` in `system/fvSchemes` |
+| `n_steps`, `last_time`, `wallclock_s` | time loop |
 | `courant_max`, `interface_courant_max` | stability |
 | `phases` | VoF phase fractions: drift and min/max bounds — mass conservation |
 | `temperature_range` | per region, or `global` for single-region solvers |
@@ -83,7 +84,7 @@ foamtriage residuals log.X --field p --last 50     # ~4 KB, 50 rows
 ```python
 from foamtriage import FoamLog, Status
 
-log = FoamLog.load("log.simpleFoam")
+log = FoamLog.read("log.simpleFoam")
 log.status is Status.FAILED  # the verdict as an enum
 log.healthy  # False when it failed, diverged or finished dirty
 log.summary()  # the capped payload, <= 2 kB
@@ -91,8 +92,11 @@ log.residual_history("p", last=50)
 log.steps  # per-step rows, never in the summary
 ```
 
-`foamtriage.DIAGNOSTICS` is the failure table, `foamtriage.SOLVED_TOL` the
-absolute residual tolerance behind trend verdicts, and `foamtriage capabilities`
+`FoamLog.load(fp)` takes an open file and `FoamLog.loads(s, name=...)` a string;
+`name` is only a filename hint for the solver. Pass `tolerance=` (one value or
+per field) with the solver tolerances from `system/fvSolution` to replace
+`foamtriage.SOLVED_TOL`, the default floor behind trend verdicts.
+`foamtriage.DIAGNOSTICS` is the failure table, and `foamtriage capabilities`
 prints the machine-readable self description.
 
 ## Validating it against your own logs

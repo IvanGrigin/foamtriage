@@ -25,7 +25,7 @@ SKIP_SUFFIXES = (".md", ".json", ".py", ".csv", ".parquet")
 def check(path: Path) -> tuple[FoamLog | None, list[str]]:
     """Return the parsed log and the reasons to doubt it."""
     try:
-        log = FoamLog.load(path)
+        log = FoamLog.read(path)
     except Exception as exc:  # noqa: BLE001 - a crash IS the finding here
         return None, [f"PARSER CRASHED: {type(exc).__name__}: {exc}"]
 

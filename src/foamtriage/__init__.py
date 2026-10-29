@@ -1,7 +1,7 @@
 """Turn an OpenFOAM log into a verdict that fits in a few hundred tokens.
 
 >>> from foamtriage import FoamLog
->>> log = FoamLog.load("log.simpleFoam")
+>>> log = FoamLog.read("log.simpleFoam")
 >>> log.status
 <Status.FAILED: 'failed'>
 >>> log.fix["note"]
@@ -23,7 +23,7 @@ from ._log import (
     Trend,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "DIAGNOSTICS",
