@@ -64,11 +64,11 @@ a human to graph. Its per-step output overlaps with what `foamtriage` exposes as
 `residuals` and `steps`, and if plotting is what you want, use it.
 
 What `foamLog` does not do is **name a failure**. `foamtriage` carries a table
-of 56 recognised failure modes, each with the specifics pulled out of the
+of 55 recognised failure modes, each with the specifics pulled out of the
 message and one action to take.
 
-Each entry records where it came from. 43 of the 56 have been seen firing on
-real logs (`source=corpus`); the other 13 are plausible but unobserved
+Each entry records where it came from. 46 of the 55 have been seen firing on
+real logs (`source=corpus`); the other 9 are plausible but unobserved
 (`source=inferred`), and a hit on one of those is a hint rather than a verdict.
 If you get one, the log is worth an issue.
 
@@ -116,8 +116,9 @@ is pinned as a minimal log in the tests instead.
 - Utility logs (`blockMesh`, `checkMesh`, `snappyHexMesh`, `decomposePar`) have
   their failures named, but their per-run numbers — cell counts, mesh quality
   tables — are not parsed yet.
-- 13 of the 56 failure modes are `source=inferred`: never observed in the
-  corpus. They may still be real — a regex that silently never matches looks
+- 9 of the 55 failure modes are `source=inferred`: never observed in the
+  corpus, though their wording is checked against the OpenFOAM source (the MPI
+  runtime for segfaults). They may still be real — a regex that silently never matches looks
   like coverage and is not, so they are labelled rather than hidden.
 - Benign chatter is filtered out of the catch-all warning counter.
   `Smoothing displacement` alone appeared 628 times across 520 utility logs;

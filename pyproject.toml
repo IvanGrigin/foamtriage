@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "foamtriage"
-version = "0.2.0"
+version = "0.2.1"
 description = "Turn an OpenFOAM log into a verdict that fits in a few hundred tokens"
 readme = "README.md"
 license = "MIT"

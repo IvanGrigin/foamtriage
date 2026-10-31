@@ -13,6 +13,7 @@ import os
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 OUT = "reallogs"
@@ -59,7 +60,7 @@ NAMES = [
     "log.surfaceFeatureExtract",
 ]
 
-MAX_FILES = 400
+MAX_FILES = 1000
 MAX_BYTES = 120 * 1024 * 1024
 MIN_BYTES = 400
 
@@ -131,12 +132,13 @@ def main():
         if kept >= MAX_FILES or total >= MAX_BYTES:
             print("cap reached", flush=True)
             break
-        url = f"https://raw.githubusercontent.com/{c['repo']}/HEAD/{c['path']}"
+        path = urllib.parse.quote(c["path"])
+        url = f"https://raw.githubusercontent.com/{c['repo']}/HEAD/{path}"
         try:
             with urllib.request.urlopen(url, timeout=40) as r:
                 data = r.read(8 * 1024 * 1024)
         except (OSError, ValueError) as e:
-            # a URL with spaces or non-ascii, a 404, a timeout: skip and go on
+            # a 404, a timeout: skip and go on
             target = f"{c['repo']}/{c['path']}"[:60]
             print(f"  fail {target:<60} {e}", flush=True)
             continue

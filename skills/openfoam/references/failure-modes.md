@@ -61,11 +61,10 @@ most common single one, `entry_not_found`, accounted for 20 of them.
 | `cast_failure` | fatal | a boundary condition of the wrong kind was used where another kind was required |
 | `field_mesh_mismatch` | fatal | a field file was written for a different mesh than the one currently loaded |
 | `missing_file` | fatal | a file the case needs, such as the mesh, a 0/ field, or a dictionary, is absent |
-| `solution_singularity` | fatal | the linear system has no unique solution because pressure has no reference level in the closed domain |
 | `fp_exception` | fatal | a division by zero, square root of a negative number, or numeric overflow occurred during the run |
 | `segfault` | fatal | a memory fault occurred, commonly from a corrupt mesh or a parallel run count mismatched with the decomposition |
 | `max_iterations` | warning | the linear solver reached its iteration cap without meeting its tolerance |
-| `continuity_not_removable` | warning | the boundary conditions fix the flux on every boundary so inflow and outflow cannot be balanced |
+| `continuity_not_removable` | fatal | the boundary conditions fix the flux on every boundary so inflow and outflow cannot be balanced |
 | `negative_temperature` | fatal | the energy equation produced a temperature below absolute zero, which is unphysical |
 | `bounding` | warning | field values were clipped back into their physical range because the solution went out of bounds |
 | `processor_dir_mismatch` | fatal | the case was decomposed for {found} processors but is being run with {expected} |
